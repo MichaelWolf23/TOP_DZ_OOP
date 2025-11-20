@@ -55,6 +55,7 @@ public class Program
             new Manager("Олег Васильев", 14000m, 5000m),
             new Developer("Петр Сидоров", 110000m, 1623)
         };
+        Console.WriteLine("--- Расчет заработной платы ---\n");
 
         foreach (Employee employee in employees)
         {
