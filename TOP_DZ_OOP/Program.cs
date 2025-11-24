@@ -1,46 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class Employee
+public abstract class Document
 {
-    public string Name { get; set; }
-    public virtual string Position { get; set; }
-    public decimal BaseSalary { get; set; }
-    public virtual decimal CalculateMonthlySalary() => BaseSalary;
-    public virtual void PrintMonthlySalary()
+    protected string Author { get; set; }
+    public abstract void Render();
+    protected Document(string author)
     {
-        Console.WriteLine($"Зарплата для {Position} {Name}: {CalculateMonthlySalary()}");
-    }
-
-    public Employee(string name, decimal baseSalary)
-    {
-        Name = name;
-        BaseSalary = baseSalary;
-        Position = "Работник";
+        Author = author;
     }
 }
 
-public class Manager : Employee
+public class TextDocument : Document
 {
-    public decimal Bonus { get; set; }
-    public override decimal CalculateMonthlySalary() => BaseSalary + Bonus;
-
-    public Manager(string name, decimal baseSalary, decimal bonus) : base(name, baseSalary)
+    public string Content {  get; set; }
+    public TextDocument(string author, string content) : base(author)
     {
-        Bonus = bonus;
-        Position = "Менеджер";
+        Content = content;
+    }
+    public override void Render()
+    {
+        Console.WriteLine($"[Текст] Автор: {Author}");
+        Console.WriteLine($"Содержимое: {Content}");
     }
 }
-
-public class Developer : Employee
+public class ImageDocument : Document
 {
-    public int LinesOfCodeWritten { get; set; }
-    public override decimal CalculateMonthlySalary() => BaseSalary + (LinesOfCodeWritten * 10m);
-
-    public Developer(string name, decimal baseSalary, int linesOfCodeWritten) : base(name, baseSalary)
+    public string Resolution { get; set; }
+    public ImageDocument(string author, string resolution) : base(author)
     {
-        LinesOfCodeWritten = linesOfCodeWritten;
-        Position = "Разработчик";
+        Resolution = resolution;
+    }
+    public override void Render()
+    {
+        Console.WriteLine($"[Изображение] Автор: {Author}");
+        Console.WriteLine($"Рендеринг изображения с разрешением {Resolution}");
     }
 }
 
@@ -48,18 +42,20 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        List<Employee> employees = new List<Employee>()
+        List<Document> documents = new List<Document>()
         {
-            new Manager("Иван Петров", 10000m, 2000m),
-            new Developer("Анна Сидорова", 15000m, 1359),
-            new Manager("Олег Васильев", 14000m, 5000m),
-            new Developer("Петр Сидоров", 110000m, 1623)
-        };
-        Console.WriteLine("--- Расчет заработной платы ---\n");
+            new TextDocument("Лев Толстой", " Все счастливые семьи похожи друг на друга..."),
+            new ImageDocument("Иван Шишкин", "3558x2180"),
+            new TextDocument("Михаил Булгаков", "В белом плаще с кровавым подбоем..."),
 
-        foreach (Employee employee in employees)
+        };
+        Console.WriteLine("--- Рендеринг документов ---\n");
+
+        Console.WriteLine("Начинаю рендеринг...");
+        foreach (Document document in documents)
         {
-            employee.PrintMonthlySalary();
+            Console.WriteLine("--------------------");
+            document.Render();
         }
     }
 }
