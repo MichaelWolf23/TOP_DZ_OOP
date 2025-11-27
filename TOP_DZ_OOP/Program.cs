@@ -1,40 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public abstract class Document
+public sealed class CacheService
 {
-    protected string Author { get; set; }
-    public abstract void Render();
-    protected Document(string author)
-    {
-        Author = author;
-    }
-}
+    private static readonly CacheService _instance = new CacheService();
 
-public class TextDocument : Document
-{
-    public string Content {  get; set; }
-    public TextDocument(string author, string content) : base(author)
+    private static Dictionary<string, object> _cache;
+    
+    public void Add(string key, object value)
     {
-        Content = content;
+        _cache[key] = value;
+        Console.WriteLine($"Данные '{key}' добавлены.");
+
     }
-    public override void Render()
+
+    public object? Get(string key)
     {
-        Console.WriteLine($"[Текст] Автор: {Author}");
-        Console.WriteLine($"Содержимое: {Content}");
+        return _cache[key];
     }
-}
-public class ImageDocument : Document
-{
-    public string Resolution { get; set; }
-    public ImageDocument(string author, string resolution) : base(author)
+    public static CacheService Instance
     {
-        Resolution = resolution;
+        get { return _instance; }
     }
-    public override void Render()
+    private CacheService()
     {
-        Console.WriteLine($"[Изображение] Автор: {Author}");
-        Console.WriteLine($"Рендеринг изображения с разрешением {Resolution}");
+        _cache = new Dictionary<string, object>();
+        Console.WriteLine("(Экземпляр CacheService создан)");
     }
 }
 
@@ -42,20 +33,21 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        List<Document> documents = new List<Document>()
-        {
-            new TextDocument("Лев Толстой", " Все счастливые семьи похожи друг на друга..."),
-            new ImageDocument("Иван Шишкин", "3558x2180"),
-            new TextDocument("Михаил Булгаков", "В белом плаще с кровавым подбоем..."),
+        
+        Console.WriteLine("--- Демонстрация работы глобального кэша (Singleton) ---");
 
-        };
-        Console.WriteLine("--- Рендеринг документов ---\n");
+        CacheService cache1 = CacheService.Instance;
+        CacheService cache2 = CacheService.Instance;
 
-        Console.WriteLine("Начинаю рендеринг...");
-        foreach (Document document in documents)
-        {
-            Console.WriteLine("--------------------");
-            document.Render();
-        }
+        Console.WriteLine("\nДобавляем данные в кэш через первую ссылку...");
+        cache1.Add("ConnectionString", "Server=.;Database=CacheDB;");
+        cache1.Add("ApiKey", "XYZ12345ABC");
+
+        Console.WriteLine("\nПолучаем данные из кэша через ВТОРУЮ ссылку...");
+        Console.WriteLine($"Значение по ключу 'ConnectionString': {cache2.Get("ConnectionString")}");
+        Console.WriteLine($"Значение по ключу 'ApiKey': {cache2.Get("ApiKey")}");
+
+        Console.WriteLine("\nПроверяем, что обе переменные ссылаются на один объект...");
+        Console.WriteLine($"Результат: {object.ReferenceEquals(cache1, cache2)}");
     }
 }
