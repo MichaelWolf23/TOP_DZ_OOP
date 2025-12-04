@@ -1,31 +1,90 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
-public sealed class CacheService
+
+public interface ITextPlugin
 {
-    private static readonly CacheService _instance = new CacheService();
+    string Process(string input);
+}
 
-    private static Dictionary<string, object> _cache;
-    
-    public void Add(string key, object value)
+public class ToUpperPlugin : ITextPlugin
+{
+    public string Process(string input)
     {
-        _cache[key] = value;
-        Console.WriteLine($"Данные '{key}' добавлены.");
+        return input.ToUpper();
+    }
+}
 
+public class SpaceRemoverPlugin : ITextPlugin
+{
+    public string Process(string input)
+    {
+        return input.Replace(" ", "");
     }
+}
 
-    public object? Get(string key)
+public class ReversePlugin : ITextPlugin
+{
+    public string Process(string input)
     {
-        return _cache[key];
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = input.Length - 1; i >= 0; i--)
+        {
+            sb.Append(input[i]);
+        }
+
+        return sb.ToString();
     }
-    public static CacheService Instance
+}
+
+public class TranslitPlugin : ITextPlugin
+{
+    private readonly Dictionary<char, string> _translitMap = new Dictionary<char, string>
+        {
+            {'а', "a"}, {'б', "b"}, {'в', "v"}, {'г', "g"}, {'д', "d"}, {'е', "e"}, {'ё', "yo"},
+            {'ж', "zh"}, {'з', "z"}, {'и', "i"}, {'й', "y"}, {'к', "k"}, {'л', "l"}, {'м', "m"},
+            {'н', "n"}, {'о', "o"}, {'п', "p"}, {'р', "r"}, {'с', "s"}, {'т', "t"}, {'у', "u"},
+            {'ф', "f"}, {'х', "kh"}, {'ц', "ts"}, {'ч', "ch"}, {'ш', "sh"}, {'щ', "shch"},
+            {'ъ', ""}, {'ы', "y"}, {'ь', ""}, {'э', "e"}, {'ю', "yu"}, {'я', "ya"}
+        };
+
+    public string Process(string input)
     {
-        get { return _instance; }
+        StringBuilder sb = new StringBuilder();
+
+        foreach (char c in input)
+        {
+            char lowerC = char.ToLower(c);
+
+            if (_translitMap.ContainsKey(lowerC))
+            {
+                string replacement = _translitMap[lowerC];
+
+                if (char.IsUpper(c) && replacement.Length > 0)
+                {
+                    replacement = char.ToUpper(replacement[0]) + replacement.Substring(1);
+                }
+                sb.Append(replacement);
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
     }
-    private CacheService()
+}
+public static class TextProcessor
+{
+    public static string TextTransform(string text, List<ITextPlugin> plugins)
     {
-        _cache = new Dictionary<string, object>();
-        Console.WriteLine("(Экземпляр CacheService создан)");
+        foreach (ITextPlugin plugin in plugins)
+        {
+            text = plugin.Process(text);
+        }
+        return text;
     }
 }
 
@@ -33,21 +92,42 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        
-        Console.WriteLine("--- Демонстрация работы глобального кэша (Singleton) ---");
+        string text = "Hello World! This is a test.";
+        string textRu = "Привет Мир! Это тест.";
 
-        CacheService cache1 = CacheService.Instance;
-        CacheService cache2 = CacheService.Instance;
+        List<ITextPlugin> plugins = new List<ITextPlugin>
+        { 
+            new ToUpperPlugin(),
+            new SpaceRemoverPlugin(),
+            new ReversePlugin()
+        };
 
-        Console.WriteLine("\nДобавляем данные в кэш через первую ссылку...");
-        cache1.Add("ConnectionString", "Server=.;Database=CacheDB;");
-        cache1.Add("ApiKey", "XYZ12345ABC");
+        List<ITextPlugin> pluginTranslit = new List<ITextPlugin>
+        {
+            new TranslitPlugin()
+        };
 
-        Console.WriteLine("\nПолучаем данные из кэша через ВТОРУЮ ссылку...");
-        Console.WriteLine($"Значение по ключу 'ConnectionString': {cache2.Get("ConnectionString")}");
-        Console.WriteLine($"Значение по ключу 'ApiKey': {cache2.Get("ApiKey")}");
 
-        Console.WriteLine("\nПроверяем, что обе переменные ссылаются на один объект...");
-        Console.WriteLine($"Результат: {object.ReferenceEquals(cache1, cache2)}");
+        Console.WriteLine("--- Система обработки текста на плагинах ---\n");
+        Console.WriteLine($"Исходная строка: {text}\n");
+        Console.WriteLine("Примененные плагины:");
+
+        foreach (ITextPlugin plugin in plugins)
+        {
+            Console.WriteLine($"- {plugin}");
+        }
+
+        Console.WriteLine($"\nРезультат после обработки: {TextProcessor.TextTransform(text, plugins)}");
+
+        Console.WriteLine("\n--- Система обработки текста на плагине TranslitPlugin ---\n");
+        Console.WriteLine($"Исходная строка: {textRu}\n");
+        Console.WriteLine("Примененные плагины:");
+
+        foreach (ITextPlugin plugin in pluginTranslit)
+        {
+            Console.WriteLine($"- {plugin}");
+        }
+
+        Console.WriteLine($"\nРезультат после обработки: {TextProcessor.TextTransform(textRu, pluginTranslit)}");
     }
 }
